@@ -36,6 +36,10 @@ const connectionServiceStandard = new StandardConnectionService({
   },
   workflowAppDetails: { appName: 'app', identity: { type: ResourceIdentityType.SYSTEM_ASSIGNED } },
   readConnections: () => Promise.resolve({}),
+  writeConnection: (data) => {
+    console.log(data);
+    return Promise.resolve();
+  },
 });
 
 const connectionServiceConsumption = new ConsumptionConnectionService({
