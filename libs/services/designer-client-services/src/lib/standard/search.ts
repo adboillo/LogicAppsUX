@@ -39,7 +39,30 @@ export class StandardSearchService extends BaseSearchService {
     const filterOperation = (operation: DiscoveryOperation<BuiltInOperation>) =>
       filterStateful(operation, !!this.options.showStatefulOperations);
     if (this._isDev) {
-      return Promise.resolve([...almostAllBuiltInOperations, ...getClientBuiltInOperations(filterOperation)]);
+      const desktopFlow: DiscoveryOperation<BuiltInOperation> = {
+        id: '/providers/Microsoft.PowerApps/apis/shared_uiflow/apiOperations/RunUIFlow_V2',
+        name: 'RunUIFlow_V2',
+        type: 'Microsoft.ProcessSimple/apis/apiOperations',
+        properties: {
+          operationType: 'OpenApiConnection',
+          operationKind: 'NotSpecified',
+          brandColor: '#0066FF',
+          summary: 'Run a flow built with Power Automate for desktop',
+          description: 'A flow will automatically run a set of steps built by Power Automate for desktop.',
+          visibility: 'important',
+          iconUri: 'https://connectoricons-df.azureedge.net/releases/v1.0.1649/1.0.1649.3368/uiflow/icon.png',
+          api: {
+            brandColor: '#0066FF',
+            description: 'A flow will automatically run a set of steps built by Power Automate for desktop.',
+            displayName: 'Desktop flows',
+            id: '/providers/Microsoft.PowerApps/apis/shared_uiflow',
+            iconUri: 'https://connectoricons-df.azureedge.net/releases/v1.0.1649/1.0.1649.3368/uiflow/icon.png',
+            tier: 'Premium',
+            type: 'Microsoft.ProcessSimple/apis/apiOperations',
+          },
+        },
+      };
+      return Promise.resolve([desktopFlow, ...almostAllBuiltInOperations, ...getClientBuiltInOperations(filterOperation)]);
     }
     const { apiVersion, baseUrl, httpClient, showStatefulOperations } = this.options;
     const uri = `${baseUrl}/operations`;

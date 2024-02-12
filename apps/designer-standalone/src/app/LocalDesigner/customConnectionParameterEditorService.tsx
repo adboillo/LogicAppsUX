@@ -1,4 +1,8 @@
+import { Dropdown, Toggle, getTheme } from '@fluentui/react';
 import type {
+  IConnectionCredentialMappingEditorProps,
+  IConnectionCredentialMappingInfo,
+  IConnectionCredentialMappingOptions,
   IConnectionParameterEditorOptions,
   IConnectionParameterEditorProps,
   IConnectionParameterEditorService,
@@ -21,6 +25,20 @@ export class CustomConnectionParameterEditorService implements IConnectionParame
     if (connectorId === '/providers/Microsoft.PowerApps/apis/shared_uiflow' && parameterKey === 'targetId') {
       return {
         EditorComponent: TargetPicker,
+      };
+    }
+
+    return undefined;
+  }
+
+  public getCredentialMappingEditorOptions({ connectorId }: IConnectionCredentialMappingInfo): IConnectionCredentialMappingOptions | undefined {
+    if (!this.areCustomEditorsEnabled) {
+      return undefined;
+    }
+
+    if (connectorId === '/providers/Microsoft.PowerApps/apis/shared_uiflow') {
+      return {
+        EditorComponent: CredentialPicker,
       };
     }
 
@@ -56,13 +74,13 @@ const TargetPicker = (props: IConnectionParameterEditorProps) => {
   const customAllowedValue =
     props.value && !remoteOptions.some((o) => o.value === props.value)
       ? {
-          text: `Custom value (${props.value})`,
-          value: props.value,
-        }
+        text: `Custom value (${props.value})`,
+        value: props.value,
+      }
       : {
-          text: `Custom value`,
-          value: '',
-        };
+        text: `Custom value`,
+        value: '',
+      };
 
   const parameter = {
     ...props.parameter,
@@ -104,3 +122,59 @@ const TargetPicker = (props: IConnectionParameterEditorProps) => {
     </>
   );
 };
+
+const CredentialPicker = ({
+  mappingName,
+  parameters,
+  renderParameter,
+  setParameterValues
+}: IConnectionCredentialMappingEditorProps) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const displayName = Object.entries(parameters).map(([_, p]) => p.uiDefinition?.credentialMapping?.displayName).filter(Boolean)[0] || mappingName;
+  const tooltip = Object.entries(parameters).map(([_, p]) => p.uiDefinition?.credentialMapping?.tooltip).filter(Boolean)[0] || mappingName;
+  return <div style={{ border: `2px dashed ${getTheme().palette.themePrimary}`, borderLeft: 'unset', borderRight: 'unset', paddingBottom: 8 }}>
+    <Toggle label={displayName} onText={"Using credentials"} offText={"Using parameters"} checked={showPicker} onChange={(_, value) => setShowPicker(!!value)} />
+    {!showPicker && Object.entries(parameters).map(([key, value]) => renderParameter(key, value))}
+    {showPicker &&
+      <Dropdown
+        placeholder={tooltip}
+        onChange={(_, o) => {
+          if (o) {
+            setParameterValues(values => {
+              const newValues = { ...values };
+              Object.entries(parameters).forEach(([key, value]) => {
+                const mappingValue = value.uiDefinition?.credentialMapping?.values?.find(v => v.credentialKeyName in o.data.values);
+                if (mappingValue) {
+                  newValues[key] = o.data.values[mappingValue.credentialKeyName];
+                }
+              });
+              return newValues
+            });
+          }
+        }} options={[{
+          key: '1',
+          text: 'Session for me@contoso.com',
+          data: {
+            values: {
+              'UsernameKey': 'me@contoso.com',
+              'PasswordKey': '********'
+            }
+          }
+        }, {
+          key: '2',
+          text: 'Session for you@contoso.com',
+          data: {
+            values: {
+              'UsernameKey': 'you@contoso.com',
+              'PasswordKey': '***********'
+            }
+          }
+        }]}
+        styles={{
+          root: {
+            width: '100%'
+          }
+        }}
+      />}
+  </div>
+}
